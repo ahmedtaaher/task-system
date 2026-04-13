@@ -1,0 +1,16 @@
+E:\TaskManagementSystem\Application\bin\Debug\net9.0\Application.deps.json
+E:\TaskManagementSystem\Application\bin\Debug\net9.0\Application.dll
+E:\TaskManagementSystem\Application\bin\Debug\net9.0\Application.pdb
+E:\TaskManagementSystem\Application\bin\Debug\net9.0\Domain.dll
+E:\TaskManagementSystem\Application\bin\Debug\net9.0\Domain.pdb
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.csproj.AssemblyReference.cache
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.GeneratedMSBuildEditorConfig.editorconfig
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.AssemblyInfoInputs.cache
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.AssemblyInfo.cs
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.csproj.CoreCompileInputs.cache
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.sourcelink.json
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Applicat.44B5EDA2.Up2Date
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.dll
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\refint\Application.dll
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\Application.pdb
+E:\TaskManagementSystem\Application\obj\Debug\net9.0\ref\Application.dll

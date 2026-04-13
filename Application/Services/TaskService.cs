@@ -7,10 +7,12 @@ namespace Application.Services
   public class TaskService
   {
     private readonly ITaskRepository _taskRepo;
+    private readonly ICacheService _cache;
 
-    public TaskService(ITaskRepository taskRepo)
+    public TaskService(ITaskRepository taskRepo, ICacheService cache)
     {
       _taskRepo = taskRepo;
+      _cache = cache;
     }
 
     public async Task CreateTaskAsync(Guid userId, CreateTaskRequest request)
@@ -32,6 +34,12 @@ namespace Application.Services
 
     public async Task<TaskResponse> GetTaskByIdAsync(Guid userId, Guid taskId)
     {
+      var cacheKey = $"task:{taskId}";
+
+      var cached = await _cache.GetAsync<TaskResponse>(cacheKey);
+      if (cached != null)
+        return cached;
+
       var task = await _taskRepo.GetByIdAsync(taskId);
       if (task == null)
         throw new Exception("Task not found");
@@ -39,7 +47,10 @@ namespace Application.Services
       if (task.UserId != userId)
         throw new UnauthorizedAccessException("You cannot access this task");
 
-      return MapToResponse(task);
+      var response = MapToResponse(task);
+      await _cache.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5));
+
+      return response;
     }
 
     public async Task<List<TaskResponse>> GetUserTasksAsync(Guid userId)
@@ -66,6 +77,7 @@ namespace Application.Services
       task.UpdateStatus(request.Status);
 
       await _taskRepo.SaveChangesAsync();
+      await _cache.RemoveAsync($"task:{taskId}");
     }
 
     private TaskResponse MapToResponse(TaskItem task)

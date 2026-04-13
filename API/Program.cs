@@ -1,6 +1,7 @@
 using System.Text;
 using Application.Interfaces;
 using Application.Services;
+using Infrastructure.Cashing;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
@@ -8,10 +9,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -52,6 +53,13 @@ builder.Services.AddScoped<IPasswordHash, PasswordHash>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<TaskService>();
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+  var config = builder.Configuration["Redis:ConnectionString"];
+  return ConnectionMultiplexer.Connect(config);
+});
+
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
 builder.Services.AddAuthentication(options =>

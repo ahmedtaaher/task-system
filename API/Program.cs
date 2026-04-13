@@ -2,7 +2,7 @@ using System.Text;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Background;
-using Infrastructure.Cashing;
+using Infrastructure.Caching;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
@@ -16,35 +16,33 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
-	options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-	{
-		Description =
-			"JWT Authorization header using the Bearer scheme. \r\n\r\n " +
-			"Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
-			"Example: \"Bearer 12345abcdef\"",
-		Name = "Authorization",
-		In = ParameterLocation.Header,
-		Scheme = "Bearer"
-	});
-	options.AddSecurityRequirement(new OpenApiSecurityRequirement()
-	{
-		{
-			new OpenApiSecurityScheme
-			{
-				Reference = new OpenApiReference
-				{
-					Type = ReferenceType.SecurityScheme,
-					Id = "Bearer"
-				},
-				Scheme = "oauth2",
-				Name = "Bearer",
-				In = ParameterLocation.Header
-			},
-			new List<string>()
-		}
-	});
+  options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  {
+    Description = "Enter Bearer token",
+    Name = "Authorization",
+    In = ParameterLocation.Header,
+    Type = SecuritySchemeType.Http,
+    Scheme = "bearer",
+    BearerFormat = "JWT"
+  });
+
+  options.AddSecurityRequirement(new OpenApiSecurityRequirement
+  {
+    {
+      new OpenApiSecurityScheme
+      {
+        Reference = new OpenApiReference
+        {
+          Type = ReferenceType.SecurityScheme,
+          Id = "Bearer"
+        }
+      },
+      Array.Empty<string>()
+    }
+  });
 });
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -54,17 +52,23 @@ builder.Services.AddScoped<IPasswordHash, PasswordHash>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<TaskService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<AdminService>();
+
 builder.Services.AddSingleton<IBackgroundQueue, BackgroundQueue>();
 builder.Services.AddHostedService<BackgroundWorker>();
+
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-  var config = builder.Configuration["Redis:ConnectionString"];
+  var config = builder.Configuration["Redis:ConnectionString"] ?? throw new Exception("Redis config missing");
   return ConnectionMultiplexer.Connect(config);
 });
-
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
-var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new Exception("JWT key missing");
+
+var key = Encoding.UTF8.GetBytes(jwtKey);
+
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -84,11 +88,11 @@ builder.Services.AddAuthentication(options =>
     IssuerSigningKey = new SymmetricSecurityKey(key)
   };
 });
+
 builder.Services.AddAuthorization();
 
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -100,6 +104,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+  var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+  await context.Database.MigrateAsync();
+  await DbSeeder.SeedAdminAsync(context);
+}
+
 app.Run();
-
-

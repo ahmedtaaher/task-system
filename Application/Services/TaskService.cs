@@ -8,11 +8,13 @@ namespace Application.Services
   {
     private readonly ITaskRepository _taskRepo;
     private readonly ICacheService _cache;
+    private readonly IBackgroundQueue _queue;
 
-    public TaskService(ITaskRepository taskRepo, ICacheService cache)
+    public TaskService(ITaskRepository taskRepo, ICacheService cache, IBackgroundQueue queue)
     {
       _taskRepo = taskRepo;
       _cache = cache;
+      _queue = queue;
     }
 
     public async Task CreateTaskAsync(Guid userId, CreateTaskRequest request)
@@ -30,6 +32,13 @@ namespace Application.Services
 
       await _taskRepo.AddAsync(task);
       await _taskRepo.SaveChangesAsync();
+      
+      _queue.Enqueue(async token =>
+      {
+        await Task.Delay(2000, token); // simulate work
+
+        Console.WriteLine($"Task '{task.Title}' processed in background");
+      });
     }
 
     public async Task<TaskResponse> GetTaskByIdAsync(Guid userId, Guid taskId)

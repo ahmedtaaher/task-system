@@ -1,6 +1,7 @@
 using System.Text;
 using Application.Interfaces;
 using Application.Services;
+using Infrastructure.Background;
 using Infrastructure.Cashing;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
@@ -53,6 +54,8 @@ builder.Services.AddScoped<IPasswordHash, PasswordHash>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<TaskService>();
+builder.Services.AddSingleton<IBackgroundQueue, BackgroundQueue>();
+builder.Services.AddHostedService<BackgroundWorker>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
   var config = builder.Configuration["Redis:ConnectionString"];

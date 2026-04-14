@@ -18,7 +18,12 @@ namespace API.Controllers
 
     private Guid GetUserId()
     {
-      return Guid.Parse(User.FindFirstValue("sub")!);
+      var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+      if (string.IsNullOrEmpty(userId))
+        throw new UnauthorizedAccessException("Invalid token");
+
+      return Guid.Parse(userId);
     }
 
     [HttpPost]

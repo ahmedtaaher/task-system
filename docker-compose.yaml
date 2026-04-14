@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    ports:
+      - "5000:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=taskdb;Username=postgres;Password=123456
+      - Redis__ConnectionString=redis:6379
+      - Jwt__Key=MY SUPER SECRET KEY IS USED TO SIGN AND VERIFY JWT TOKENS
+      - Jwt__Issuer=TaskManagementSystem
+      - Jwt__Audience=TaskManagementSystemUsers
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
